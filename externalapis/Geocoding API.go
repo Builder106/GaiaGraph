@@ -10,10 +10,26 @@ import (
     "github.com/joho/godotenv"
 )
 
-type Geocode struct {
-    Lat float64 `json:"lat"`
-    Lon float64 `json:"lon"`
+type GeocodeResponse struct {
+	Results []GeocodeResult `json:"results"`
 }
+
+type GeocodeResult struct {
+	Lat        float64           `json:"lat"`
+	Lon        float64           `json:"lon"`
+	Formatted  string            `json:"formatted"`
+	Components AddressComponents `json:"components"`
+	// Additional fields can be added here if needed
+}
+
+type AddressComponents struct {
+	City     string `json:"city"`
+	State    string `json:"state"`
+	Country  string `json:"country"`
+	Postcode string `json:"postcode"`
+	// Additional components can be added here if needed
+}
+
 
 func LoadEnv() {
     err := godotenv.Load()
@@ -23,30 +39,36 @@ func LoadEnv() {
 }
 
 func GetCountryGeocode(countryName, apiKey string) (float64, float64, error) {
-    url := fmt.Sprintf("https://api.geoapify.com/v1/geocode/search?text=%s&limit=1&format=json&apiKey=%s", countryName, apiKey)
-    resp, err := http.Get(url)
-    if err != nil {
-        return 0, 0, err
-    }
-    defer resp.Body.Close()
+	url := fmt.Sprintf("https://api.geoapify.com/v1/geocode/search?text=%s&limit=1&type=country&format=json&apiKey=%s", countryName, apiKey)
+	resp, err := http.Get(url)
+	if err != nil {
+		 return 0, 0, err
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode != 200 {
-        return 0, 0, fmt.Errorf("error fetching data for %s: %d", countryName, resp.StatusCode)
-    }
+	if resp.StatusCode != http.StatusOK {
+		 return 0, 0, fmt.Errorf("error fetching data for %s: %d", countryName, resp.StatusCode)
+	}
 
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        return 0, 0, err
-    }
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		 return 0, 0, err
+	}
 
-    var geocodes []Geocode
-    if err := json.Unmarshal(body, &geocodes); err != nil {
-        return 0, 0, err
-    }
+	var geocodeResponse GeocodeResponse
+	if err := json.Unmarshal(body, &geocodeResponse); err != nil {
+		 return 0, 0, err
+	}
 
-    if len(geocodes) == 0 {
-        return 0, 0, fmt.Errorf("no geocoding data found for %s", countryName)
-    }
+	if len(geocodeResponse.Results) == 0 {
+		 return 0, 0, fmt.Errorf("no geocoding data found for %s", countryName)
+	}
 
-    return geocodes[0].Lat, geocodes[0].Lon, nil
+	result := geocodeResponse.Results[0]
+	// Validate that the result corresponds to the intended country
+	if result.Components.Country != countryName {
+		 return 0, 0, fmt.Errorf("geocoding result does not match the country name: %s", countryName)
+	}
+
+	return result.Lat, result.Lon, nil
 }
