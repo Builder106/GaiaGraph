@@ -8,7 +8,8 @@ import (
 )
 
 func main() {
-    db.InitDB("user=youruser dbname=yourdb sslmode=disable")
+    dataSourceName := "user=olayinkav password=T0p0l0gic^ls dbname=climate_data sslmode=disable"
+    db.InitDB(dataSourceName)
 
     http.HandleFunc("/climate-data", api.GetClimateData)
 
