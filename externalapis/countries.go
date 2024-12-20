@@ -1,6 +1,6 @@
 package externalapis
 
-var countries = map[string]string{
+var Countries = map[string]string{
 	"Afghanistan": "AF",
 	"Albania": "AL",
 	"Algeria": "DZ",

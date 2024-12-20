@@ -6,7 +6,6 @@ import (
     "io"
     "log"
     "net/http"
-    "os"
 
     "github.com/joho/godotenv"
 )
@@ -16,14 +15,14 @@ type Geocode struct {
     Lon float64 `json:"lon"`
 }
 
-func loadEnv() {
+func LoadEnv() {
     err := godotenv.Load()
     if err != nil {
         log.Fatal("Error loading .env file")
     }
 }
 
-func getCountryGeocode(countryName, apiKey string) (float64, float64, error) {
+func GetCountryGeocode(countryName, apiKey string) (float64, float64, error) {
     url := fmt.Sprintf("https://api.geoapify.com/v1/geocode/search?text=%s&limit=1&format=json&apiKey=%s", countryName, apiKey)
     resp, err := http.Get(url)
     if err != nil {
@@ -50,30 +49,4 @@ func getCountryGeocode(countryName, apiKey string) (float64, float64, error) {
     }
 
     return geocodes[0].Lat, geocodes[0].Lon, nil
-}
-
-func main() {
-    loadEnv()
-    apiKey := os.Getenv("API_KEY")
-    if apiKey == "" {
-        log.Fatal("API_KEY not set in .env file")
-    }
-
-    countryGeocodes := make(map[string]map[string]float64)
-
-    for code, name := range countries {
-        lat, lon, err := getCountryGeocode(name, apiKey)
-        if err != nil {
-            log.Printf("Error fetching geocode for %s: %v", name, err)
-            continue
-        }
-        countryGeocodes[code] = map[string]float64{
-            "latitude":  lat,
-            "longitude": lon,
-        }
-    }
-
-    for code, geocode := range countryGeocodes {
-        fmt.Printf("%s: %v\n", code, geocode)
-    }
 }
