@@ -6,69 +6,102 @@ import (
     "io"
     "log"
     "net/http"
+    "os"
+    "strings"
 
     "github.com/joho/godotenv"
 )
 
 type GeocodeResponse struct {
-	Results []GeocodeResult `json:"results"`
+    Results []GeocodeResult `json:"results"`
 }
 
 type GeocodeResult struct {
-	Lat        float64           `json:"lat"`
-	Lon        float64           `json:"lon"`
-	Formatted  string            `json:"formatted"`
-	Components AddressComponents `json:"components"`
-	// Additional fields can be added here if needed
+    Lat        float64           `json:"lat"`
+    Lon        float64           `json:"lon"`
+    Formatted  string            `json:"formatted"`
+    Components AddressComponents `json:"components"`
 }
 
 type AddressComponents struct {
-	City     string `json:"city"`
-	State    string `json:"state"`
-	Country  string `json:"country"`
-	Postcode string `json:"postcode"`
-	// Additional components can be added here if needed
+    City     string `json:"city"`
+    State    string `json:"state"`
+    Country  string `json:"country"`
+    Postcode string `json:"postcode"`
 }
 
+var countryNameMapping = map[string]string{
+    "Czech Republic": "Czechia",
+    "Korea, North": "North Korea",
+    "Korea, South": "South Korea",
+    "Palestine": "Palestinian Territories",
+    "Sao Tome and Principe": "São Tomé and Príncipe",
+    "Timor-Leste": "East Timor",
+    "Cabo Verde": "Cape Verde",
+    "Cote d'Ivoire": "Côte d'Ivoire",
+    "Congo, Republic of the": "Congo",
+    "Congo, Democratic Republic of the": "Democratic Republic of the Congo",
+}
 
 func LoadEnv() {
-    err := godotenv.Load()
+    wd, err := os.Getwd()
     if err != nil {
-        log.Fatal("Error loading .env file")
+        log.Fatalf("Error getting working directory: %v", err)
     }
+    log.Printf("Current working directory: %s", wd)
+
+    err = godotenv.Load("../.env")
+    if err != nil {
+        log.Fatalf("Error loading .env file: %v", err)
+    }
+    log.Println(".env file loaded successfully")
 }
 
 func GetCountryGeocode(countryName, apiKey string) (float64, float64, error) {
-	url := fmt.Sprintf("https://api.geoapify.com/v1/geocode/search?text=%s&limit=1&type=country&format=json&apiKey=%s", countryName, apiKey)
-	resp, err := http.Get(url)
-	if err != nil {
-		 return 0, 0, err
-	}
-	defer resp.Body.Close()
+    if altName, exists := countryNameMapping[countryName]; exists {
+        countryName = altName
+    }
 
-	if resp.StatusCode != http.StatusOK {
-		 return 0, 0, fmt.Errorf("error fetching data for %s: %d", countryName, resp.StatusCode)
-	}
+    url := fmt.Sprintf("https://api.geoapify.com/v1/geocode/search?text=%s&limit=1&type=country&format=json&apiKey=%s", countryName, apiKey)
+    resp, err := http.Get(url)
+    if err != nil {
+        return 0, 0, err
+    }
+    defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		 return 0, 0, err
-	}
+    if resp.StatusCode != http.StatusOK {
+        return 0, 0, fmt.Errorf("error fetching data for %s: %d", countryName, resp.StatusCode)
+    }
 
-	var geocodeResponse GeocodeResponse
-	if err := json.Unmarshal(body, &geocodeResponse); err != nil {
-		 return 0, 0, err
-	}
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return 0, 0, err
+    }
 
-	if len(geocodeResponse.Results) == 0 {
-		 return 0, 0, fmt.Errorf("no geocoding data found for %s", countryName)
-	}
+    var geoapifyResponse struct {
+        Results []struct {
+            Lat       float64 `json:"lat"`
+            Lon       float64 `json:"lon"`
+            Formatted string  `json:"formatted"`
+            Components struct {
+                Country string `json:"country"`
+            } `json:"components"`
+        } `json:"results"`
+    }
+    if err := json.Unmarshal(body, &geoapifyResponse); err != nil {
+        return 0, 0, err
+    }
 
-	result := geocodeResponse.Results[0]
-	// Validate that the result corresponds to the intended country
-	if result.Components.Country != countryName {
-		 return 0, 0, fmt.Errorf("geocoding result does not match the country name: %s", countryName)
-	}
+    if len(geoapifyResponse.Results) == 0 {
+        return 0, 0, fmt.Errorf("no geocoding data found for %s", countryName)
+    }
 
-	return result.Lat, result.Lon, nil
+    result := geoapifyResponse.Results[0]
+    log.Printf("Geocoding result for %s: %+v", countryName, result)
+
+    if !strings.Contains(result.Formatted, countryName) {
+        return 0, 0, fmt.Errorf("geocoding result does not match the country name: %s", countryName)
+    }
+
+    return result.Lat, result.Lon, nil
 }
