@@ -111,7 +111,7 @@ type NASAPowerResponse struct {
     CDD18_SUM                float64            `json:"CDD18_SUM"`
     CDH23_SUM                float64            `json:"CDH23_SUM"`
     CDH26_SUM                float64            `json:"CDH26_SUM"`
-    CM                       int                `json:"CM"`
+    CM                       float64                `json:"CM"`
     DB_004                   float64            `json:"DB_004"`
     DB_010                   float64            `json:"DB_010"`
     DB_980                   float64            `json:"DB_980"`
@@ -267,7 +267,7 @@ func fetchNASAPowerData(lat, lon, start, end string) (*NASAPowerResponse, error)
 }
 
 func getLatLonFromCountry(country string) (string, string, error) {
-	file, err := os.Open("cmd/geocoding_results.csv")
+	file, err := os.Open("geocoding_results.csv")
 	if err != nil {
 		 return "", "", err
 	}
