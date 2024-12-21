@@ -97,7 +97,6 @@ func GetCountryGeocode(countryName, apiKey string) (float64, float64, error) {
     }
 
     result := geoapifyResponse.Results[0]
-    log.Printf("Geocoding result for %s: %+v", countryName, result)
 
     if !strings.Contains(result.Formatted, countryName) {
         return 0, 0, fmt.Errorf("geocoding result does not match the country name: %s", countryName)

@@ -2,9 +2,9 @@ package main
 
 import (
     "fmt"
-    "log"
     "net/http"
     "os"
+    "sort"
 
     "GaiaGraph/internal/api"
     "GaiaGraph/internal/db"
@@ -18,29 +18,29 @@ func main() {
     externalapis.LoadEnv()
     apiKey := os.Getenv("GEOAPIFY_API_KEY")
     if apiKey == "" {
-        log.Fatal("API_KEY not set in .env file")
+        fmt.Println("API_KEY not set in .env file")
+        return
     }
 
-    countryGeocodes := make(map[string]map[string]float64)
+    // Extract and sort the country names
+    var countryNames []string
+    for name := range externalapis.Countries {
+        countryNames = append(countryNames, name)
+    }
+    sort.Strings(countryNames)
 
-    for name, code := range externalapis.Countries {
+    // Iterate over the sorted country names
+    for _, name := range countryNames {
         lat, lon, err := externalapis.GetCountryGeocode(name, apiKey)
         if err != nil {
-            log.Printf("Error fetching geocode for %s: %v", name, err)
+            fmt.Printf("Error fetching geocode for %s: %v\n", name, err)
             continue
         }
-        countryGeocodes[code] = map[string]float64{
-            "latitude":  lat,
-            "longitude": lon,
-        }
-    }
-
-    for code, geocode := range countryGeocodes {
-        fmt.Printf("%s: %v\n", code, geocode)
+        fmt.Printf("%s: [latitude: %f, longitude: %f]\n", name, lat, lon)
     }
 
     http.HandleFunc("/climate-data", api.GetClimateData)
 
-    log.Println("Server started at :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+    fmt.Println("Server started at :8080")
+    http.ListenAndServe(":8080", nil)
 }
