@@ -111,7 +111,7 @@ type NASAPowerResponse struct {
     CDD18_SUM                float64            `json:"CDD18_SUM"`
     CDH23_SUM                float64            `json:"CDH23_SUM"`
     CDH26_SUM                float64            `json:"CDH26_SUM"`
-    CM                       float64                `json:"CM"`
+    CM                       float64            `json:"CM"`
     DB_004                   float64            `json:"DB_004"`
     DB_010                   float64            `json:"DB_010"`
     DB_980                   float64            `json:"DB_980"`
@@ -174,7 +174,7 @@ type NASAPowerResponse struct {
     WB_MAX_STD               float64            `json:"WB_MAX_STD"`
     WB_MIN_AVG               float64            `json:"WB_MIN_AVG"`
     WB_MIN_STD               float64            `json:"WB_MIN_STD"`
-    WM                       int                `json:"WM"`
+    WM                       float64            `json:"WM"`
     WS10M_ANNUAL             float64            `json:"WS10M_ANNUAL"`
     WS_CM_990                float64            `json:"WS_CM_990"`
     WS_CM_996                float64            `json:"WS_CM_996"`
