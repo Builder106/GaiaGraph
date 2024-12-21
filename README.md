@@ -56,6 +56,7 @@ curl "http://localhost:8080/climate-data?country=Germany"
 ## Endpoints
 
 `GET /climate-data`
+
 Retrieved combined climate data for a specific country
 
 ### Query Parameters
