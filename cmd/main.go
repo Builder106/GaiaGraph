@@ -1,6 +1,7 @@
 package main
 
 import (
+    "encoding/csv"
     "fmt"
     "net/http"
     "os"
@@ -29,13 +30,28 @@ func main() {
     }
     sort.Strings(countryNames)
 
-    // Iterate over the sorted country names
+    // Create a CSV file
+    file, err := os.Create("geocoding_results.csv")
+    if err != nil {
+        fmt.Printf("Error creating CSV file: %v\n", err)
+        return
+    }
+    defer file.Close()
+
+    writer := csv.NewWriter(file)
+    defer writer.Flush()
+
+    // Write CSV header
+    writer.Write([]string{"Country", "Latitude", "Longitude"})
+
+    // Iterate over the sorted country names and write to CSV
     for _, name := range countryNames {
         lat, lon, err := externalapis.GetCountryGeocode(name, apiKey)
         if err != nil {
             fmt.Printf("Error fetching geocode for %s: %v\n", name, err)
             continue
         }
+        writer.Write([]string{name, fmt.Sprintf("%f", lat), fmt.Sprintf("%f", lon)})
         fmt.Printf("%s: [latitude: %f, longitude: %f]\n", name, lat, lon)
     }
 
