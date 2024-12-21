@@ -231,19 +231,24 @@ type NASAPowerResponse struct {
     } `json:"metadata"`
 }
 
-func fetchOpenWeatherData(lat, lon, apiKey string) (*OpenWeatherResponse, error) {
-    url := "https://api.openweathermap.org/data/3.0/onecall?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric"
-    resp, err := http.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
+func fetchOpenWeatherData(lat, lon string) (*OpenWeatherResponse, error) {
+	apiKey := os.Getenv("OPENWEATHER_API_KEY")
+	if apiKey == "" {
+		 return nil, fmt.Errorf("OPENWEATHER_API_KEY not set in environment")
+	}
 
-    var data OpenWeatherResponse
-    if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-        return nil, err
-    }
-    return &data, nil
+	url := "https://api.openweathermap.org/data/3.0/onecall?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric"
+	resp, err := http.Get(url)
+	if err != nil {
+		 return nil, err
+	}
+	defer resp.Body.Close()
+
+	var data OpenWeatherResponse
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		 return nil, err
+	}
+	return &data, nil
 }
 
 func fetchNASAPowerData(lat, lon, start, end string) (*NASAPowerResponse, error) {
@@ -296,11 +301,10 @@ func GetCombinedData(w http.ResponseWriter, r *http.Request) {
 		 return
 	}
 
-	apiKey := os.Getenv("OPENWEATHER_API_KEY")
 	startDate := "2001"
 	endDate := "2016"
 
-	openWeatherData, err := fetchOpenWeatherData(lat, lon, apiKey)
+	openWeatherData, err := fetchOpenWeatherData(lat, lon)
 	if err != nil {
 		 http.Error(w, err.Error(), http.StatusInternalServerError)
 		 return
