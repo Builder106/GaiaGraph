@@ -16,8 +16,8 @@
 
 1. **Clone the repository:**
    ```
-   git clone <repository_url>
-   cd <repository_directory>
+   git clone https://github.com/Builder106/GaiaGraph
+   cd GaiaGraph
    ```
 
 2. **Install dependencies:**
